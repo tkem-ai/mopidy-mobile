@@ -1,11 +1,5 @@
 import { Injectable } from '@angular/core';
 
-export interface Server {
-  name: string;
-  url: string;
-  auto?: boolean;
-}
-
 export type Theme = 'light' | 'dark';
 
 export interface Settings {
@@ -13,11 +7,8 @@ export interface Settings {
   coverart: string[];
   debug: boolean;
   locale: string;
-  server: Server | null;
-  servers: Server[];
   theme: Theme;
   timeout: number;
-  volumestep: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -25,12 +16,12 @@ export const DEFAULT_SETTINGS: Settings = {
   coverart: ['mopidy'],
   debug: false,
   locale: '',
-  server: null,
-  servers: [],
   theme: 'light',
   timeout: 15000,
-  volumestep: 10,
 };
+
+/** Settings of previous versions which are no longer used. */
+const OBSOLETE_SETTINGS = ['server', 'servers', 'volumestep'];
 
 const KEY = 'mopidy-mobile';
 
@@ -68,7 +59,8 @@ export class SettingsService {
       return;
     }
     // pre-1.4 settings were stored as separate keys
-    for (const item of ['action', 'locale', 'servers', 'stylesheet']) {
+    storage.removeItem(`${KEY}.servers`);
+    for (const item of ['action', 'locale', 'stylesheet']) {
       const key = `${KEY}.${item}`;
       const value = storage.getItem(key);
       if (value !== null) {
@@ -82,12 +74,23 @@ export class SettingsService {
     }
     // pre-2.0 settings stored the theme as a stylesheet URL
     const obj = this.read();
+    let changed = false;
     const stylesheet = obj['stylesheet'];
     if (typeof stylesheet === 'string') {
       if (!obj['theme']) {
         obj['theme'] = stylesheet.includes('dark') ? 'dark' : 'light';
       }
       delete obj['stylesheet'];
+      changed = true;
+    }
+    // remove settings of the former Cordova app
+    for (const item of OBSOLETE_SETTINGS) {
+      if (item in obj) {
+        delete obj[item];
+        changed = true;
+      }
+    }
+    if (changed) {
       this.write(obj);
     }
   }

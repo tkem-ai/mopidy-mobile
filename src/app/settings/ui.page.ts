@@ -13,7 +13,6 @@ import {
   IonToolbar,
 } from '@ionic/angular/standalone';
 
-import { PlatformService } from '../services/platform.service';
 import { PreferencesService } from '../services/preferences.service';
 import { Theme } from '../services/settings.service';
 import { TranslatePipe, TranslateService } from '../services/translate.service';
@@ -96,31 +95,15 @@ import { TranslatePipe, TranslateService } from '../services/translate.service';
             }
           </ion-select>
         </ion-item>
-        @if (platform.isWebView()) {
-          <ion-item>
-            <ion-select
-              interface="popover"
-              [label]="'Volume keys' | translate"
-              [ngModel]="settings.volumestep"
-              (ngModelChange)="preferences.setVolumeStep($event)"
-            >
-              @for (step of volumeSteps; track step) {
-                <ion-select-option [value]="step">&plusmn;{{ step }}%</ion-select-option>
-              }
-            </ion-select>
-          </ion-item>
-        }
       </ion-list>
     </ion-content>
   `,
 })
 export class UiPage {
-  readonly platform = inject(PlatformService);
   readonly preferences = inject(PreferencesService);
   readonly settings = this.preferences.get();
   readonly locales = Object.entries(inject(TranslateService).locales).map(([id, locale]) => ({ id, ...locale }));
   readonly timeouts = [5, 10, 15, 30, 60];
-  readonly volumeSteps = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
   setTheme(theme: Theme): void {
     this.preferences.setTheme(theme);

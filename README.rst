@@ -4,13 +4,8 @@ Mopidy Mobile
 Mopidy Mobile is a simple, easy to use remote that lets you fully
 control a Mopidy_ music server from your mobile device.  It is
 available as a `Web client extension
-<http://mopidy.readthedocs.org/en/latest/ext/web/>`_ and a `hybrid app
-<http://en.wikipedia.org/wiki/HTML5_in_mobile_devices#Hybrid_Mobile_Apps>`_
-for Android version 7.0 and later.  Users of older Android versions
-may still access the Web extension using Google's `Chrome browser
-<https://play.google.com/store/apps/details?id=com.android.chrome>`_.
-On Apple devices, the Web client should work when running iOS 10 or
-later.
+<http://mopidy.readthedocs.org/en/latest/ext/web/>`_, which works
+with current versions of all major mobile and desktop browsers.
 
 In a nutshell, Mopidy Mobile lets you
 
@@ -21,12 +16,6 @@ In a nutshell, Mopidy Mobile lets you
 - retrieve cover art from selected online resources.
 - choose from multiple available user interface languages.
 
-Additionally, the Android app allows you to
-
-- control playback from your device's lock screen.
-- change volume using your device's hardware buttons.
-- switch between multiple Mopidy servers on your network.
-
 
 Installation
 ------------------------------------------------------------------------
@@ -34,12 +23,6 @@ Installation
 The Web extension can be installed from PyPi_ by running::
 
   pip install Mopidy-Mobile
-
-The Android app is available from the `Google Play
-<https://play.google.com/store/apps/details?id=at.co.kemmer.mopidy_mobile>`_
-store.  You may also join the `Beta testing program
-<https://play.google.com/apps/testing/at.co.kemmer.mopidy_mobile>`_ to
-preview unreleased versions.
 
 Note that the Web client is designed to be added to your home screen,
 so it is launched in full-screen "app mode".  If you don't know how to
@@ -73,10 +56,9 @@ extension:
 Building from Source
 ------------------------------------------------------------------------
 
-Mopidy Mobile is built using `Ionic <https://ionicframework.com/>`_,
-`Angular <https://angular.dev/>`_ and `Apache Cordova
-<http://cordova.apache.org/>`_, so it is recommended to familiarize
-yourself with these before you start.
+Mopidy Mobile is built using `Ionic <https://ionicframework.com/>`_
+and `Angular <https://angular.dev/>`_, so it is recommended to
+familiarize yourself with these before you start.
 
 To build the Mopidy Web extension, you need to have `Node.js
 <https://nodejs.org/>`_ (version 20.19, 22.12 or later) and `npm
@@ -88,9 +70,15 @@ To build the Mopidy Web extension, you need to have `Node.js
 
 ``npm run dist`` builds the application into the ``www`` directory,
 and copies the result to ``mopidy_mobile/www`` for use by the Web
-extension.  Use ``npm start`` to run a local development server,
-``npm run lint`` to check the TypeScript sources and templates, and
-``npm run clean`` to remove all generated files.
+extension.  Use ``npm run lint`` to check the TypeScript sources and
+templates, and ``npm run clean`` to remove all generated files.
+
+``npm start`` runs a local development server at
+http://localhost:4200/, which forwards Mopidy's WebSocket to a Mopidy
+server running at http://localhost:6680.  To use another server, set
+the ``MOPIDY_URL`` environment variable, for example::
+
+  MOPIDY_URL=http://mopidy.local:6680 npm start
 
 Unit tests are written with `Vitest <https://vitest.dev/>`_ and run
 in a `jsdom <https://github.com/jsdom/jsdom>`_ environment via the
@@ -99,33 +87,6 @@ sources as ``*.spec.ts``, with shared test helpers in ``src/testing``.
 Run ``npm test`` to execute the test suite once, ``npm run test:watch``
 to re-run tests on changes, and ``npm run test:coverage`` to produce a
 code coverage report.
-
-To build the app for Android, please follow the Cordova `Android
-platform guide
-<https://cordova.apache.org/docs/en/latest/guide/platforms/android/>`_
-to make sure you have everything needed for Android development
-(JDK, Android SDK and Gradle).  You can verify your setup with ``npx
-cordova requirements android``.  Then, in addition to the commands
-above, run::
-
-  npm run build
-  npx cordova platform add android
-  npx cordova build android
-
-To install and run the app on a connected device or emulator, use::
-
-  npx cordova run android
-
-Note that ``npm run build`` has to be run again whenever the sources
-have changed, since Cordova only packages the contents of the ``www``
-directory.  Please refer to the `Cordova CLI
-<https://cordova.apache.org/docs/en/latest/reference/cordova-cli/>`_
-documentation for further information.
-
-Due to lack of resources, iOS is *not* supported, and it is unlikely
-that the app will run unchanged on that platform.  However, being a
-hybrid app, it shouldn't take too much effort to make it work, so
-please feel free to fork and give it a try!
 
 
 Contributing Translations

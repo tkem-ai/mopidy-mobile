@@ -1,8 +1,6 @@
 {
   "name": "Mopidy Mobile",
-  "integrations": {
-    "cordova": {}
-  },
+  "integrations": {},
   "type": "angular-standalone",
   "id": "1fb3912a"
 }

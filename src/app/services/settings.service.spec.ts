@@ -34,13 +34,6 @@ describe('SettingsService', () => {
     expect(service.get()).toEqual({ ...DEFAULT_SETTINGS, locale: 'de', debug: true });
   });
 
-  it('stores servers and the current server', () => {
-    const server = { name: 'Test', url: 'ws://test:6680/mopidy/ws/' };
-    service.extend({ servers: [server], server });
-    expect(service.get().servers).toEqual([server]);
-    expect(service.get().server).toEqual(server);
-  });
-
   it('clears stored settings', () => {
     service.extend({ locale: 'de' });
     service.clear();
@@ -70,7 +63,16 @@ describe('SettingsService', () => {
       const settings = service.get();
       expect(settings.action).toBe('add');
       expect(settings.locale).toBe('nl');
-      expect(settings.servers).toEqual([{ name: 'A', url: 'ws://a/' }]);
+      expect(JSON.parse(localStorage.getItem(KEY)!)).toEqual({ action: 'add', locale: 'nl' });
+    });
+
+    it('removes settings of the former Cordova app', () => {
+      localStorage.setItem(
+        KEY,
+        JSON.stringify({ locale: 'de', server: { name: 'A', url: 'ws://a/' }, servers: [], volumestep: 5 }),
+      );
+      service.migrate();
+      expect(JSON.parse(localStorage.getItem(KEY)!)).toEqual({ locale: 'de' });
     });
 
     it('converts the pre-2.0 stylesheet setting to a theme', () => {

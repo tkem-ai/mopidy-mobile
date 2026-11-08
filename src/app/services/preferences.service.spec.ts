@@ -53,11 +53,9 @@ describe('PreferencesService', () => {
       locale: 'fr',
       theme: 'dark',
       timeout: 5000,
-      volumestep: 3,
     });
     service.applyAll();
     expect(actions.getDefault()).toBe('add');
-    expect(actions.getVolumeStep()).toBe(3);
     expect(connection.requestTimeout).toBe(5000);
     expect(coverart.use).toHaveBeenCalledWith(['lastfm', 'archive']);
     expect(logging.debugEnabled).toBe(true);
@@ -111,11 +109,5 @@ describe('PreferencesService', () => {
     service.setTimeout(30000);
     expect(connection.requestTimeout).toBe(30000);
     expect(settings.get().timeout).toBe(30000);
-  });
-
-  it('sets and stores the volume step', () => {
-    service.setVolumeStep(2);
-    expect(actions.getVolumeStep()).toBe(2);
-    expect(settings.get().volumestep).toBe(2);
   });
 });

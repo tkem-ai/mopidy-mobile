@@ -25,7 +25,6 @@ export class PreferencesService {
   applyAll(): void {
     const obj = this.settings.get();
     this.actions.setDefault(obj.action);
-    this.actions.setVolumeStep(obj.volumestep);
     this.connection.requestTimeout = obj.timeout;
     this.coverart.use(obj.coverart);
     this.logging.debugEnabled = obj.debug;
@@ -61,11 +60,6 @@ export class PreferencesService {
   setTimeout(timeout: number): void {
     this.connection.requestTimeout = timeout;
     this.settings.extend({ timeout });
-  }
-
-  setVolumeStep(volumestep: number): void {
-    this.actions.setVolumeStep(volumestep);
-    this.settings.extend({ volumestep });
   }
 
   private applyTheme(theme: Theme): void {

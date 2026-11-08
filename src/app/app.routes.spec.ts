@@ -1,9 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { Router, Routes, provideRouter } from '@angular/router';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { routes } from './app.routes';
-import { PlatformService } from './services/platform.service';
 
 function paths(routes: Routes, prefix = ''): string[] {
   const result: string[] = [];
@@ -35,17 +34,11 @@ describe('routes', () => {
         '/playlists/:uri/edit',
         '/playlists/create',
         '/playlists/edit',
-        '/servers',
-        '/servers/add',
-        '/servers/edit',
         '/settings',
         '/settings/about',
         '/settings/coverart',
         '/settings/licenses',
         '/settings/logging',
-        '/settings/servers',
-        '/settings/servers/add',
-        '/settings/servers/edit',
         '/settings/ui',
         '/tracklist',
         '/tracklist/edit',
@@ -67,37 +60,19 @@ describe('routes', () => {
   });
 
   describe('default route', () => {
-    let isHosted: boolean;
-
     beforeEach(() => {
-      isHosted = false;
-      TestBed.configureTestingModule({
-        providers: [
-          provideRouter(routes),
-          { provide: PlatformService, useValue: { isHosted: vi.fn(() => isHosted) } },
-        ],
-      });
+      TestBed.configureTestingModule({ providers: [provideRouter(routes)] });
     });
 
-    it('shows the server list in the app', async () => {
-      const router = TestBed.inject(Router);
-      await router.navigateByUrl('/');
-      expect(router.url).toBe('/servers');
-    });
-
-    it('shows the playback view when hosted by a Mopidy server', async () => {
-      isHosted = true;
+    it('shows the playback view', async () => {
       const router = TestBed.inject(Router);
       await router.navigateByUrl('/');
       expect(router.url).toBe('/playback');
     });
 
-    it('redirects unknown URLs to the default route', async () => {
+    it('redirects unknown URLs to the playback view', async () => {
       const router = TestBed.inject(Router);
       await router.navigateByUrl('/no/such/page');
-      expect(router.url).toBe('/servers');
-      isHosted = true;
-      await router.navigateByUrl('/other/page');
       expect(router.url).toBe('/playback');
     });
   });

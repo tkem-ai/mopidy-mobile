@@ -2,7 +2,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { flush, textsOf } from '../../testing/dom';
+import { textsOf } from '../../testing/dom';
 import { CoverartService } from '../services/coverart.service';
 import { LoggingService, LogRecord } from '../services/logging.service';
 import { MenuItem, MenuService } from '../services/menu.service';
@@ -33,8 +33,6 @@ describe('SettingsPage', () => {
   let page: SettingsPage;
   let menu: { show: ReturnType<typeof vi.fn> };
   let popup: { confirm: ReturnType<typeof vi.fn> };
-  let platform: Record<string, ReturnType<typeof vi.fn>>;
-  let splashscreen: { show: ReturnType<typeof vi.fn>; hide: ReturnType<typeof vi.fn> };
   let settings: SettingsService;
 
   beforeEach(() => {
@@ -42,18 +40,10 @@ describe('SettingsPage', () => {
     localStorage.clear();
     menu = { show: vi.fn() };
     popup = { confirm: vi.fn().mockResolvedValue(false) };
-    splashscreen = { show: vi.fn(), hide: vi.fn() };
-    platform = {
-      isHosted: vi.fn().mockReturnValue(false),
-      isWebView: vi.fn().mockReturnValue(false),
-      exitApp: vi.fn(),
-      splashscreen: vi.fn().mockResolvedValue(splashscreen),
-    };
     TestBed.configureTestingModule({
       providers: [
         { provide: MenuService, useValue: menu },
         { provide: PopupService, useValue: popup },
-        { provide: PlatformService, useValue: platform },
       ],
     });
     settings = TestBed.inject(SettingsService);
@@ -65,21 +55,12 @@ describe('SettingsPage', () => {
     vi.restoreAllMocks();
   });
 
-  it('shows reset, restart and exit menu items', () => {
+  it('shows reset and restart menu items', () => {
     page.showMenu(new Event('click'));
     expect(menuItems(menu).map((item) => [item.text, !!item.hidden])).toEqual([
       ['Reset', false],
       ['Restart', false],
-      ['Exit', true],
     ]);
-    menuItem(menu, 'Exit').handler!();
-    expect(platform.exitApp).toHaveBeenCalled();
-  });
-
-  it('offers to exit in a WebView', () => {
-    platform.isWebView.mockReturnValue(true);
-    page.showMenu(new Event('click'));
-    expect(menuItem(menu, 'Exit').hidden).toBe(false);
   });
 
   it('resets settings after confirmation', async () => {
@@ -91,12 +72,6 @@ describe('SettingsPage', () => {
     await page.reset();
     expect(settings.clear).toHaveBeenCalled();
     expect(settings.get()).toEqual(DEFAULT_SETTINGS);
-    expect(splashscreen.show).toHaveBeenCalled();
-  });
-
-  it('shows the splash screen while restarting', async () => {
-    await page.restart();
-    expect(splashscreen.show).toHaveBeenCalled();
   });
 });
 
@@ -112,7 +87,6 @@ describe('UiPage', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: PreferencesService, useValue: preferences },
-        { provide: PlatformService, useValue: { isWebView: () => false } },
       ],
     });
     page = TestBed.runInInjectionContext(() => new UiPage());
@@ -123,7 +97,6 @@ describe('UiPage', () => {
     expect(page.locales.map((locale) => locale.id)).toEqual(['ca', 'de', 'en', 'es', 'fr', 'nb', 'nl', 'pl', 'sk']);
     expect(page.locales.find((locale) => locale.id === 'de')?.displayName).toBe('Deutsch');
     expect(page.timeouts).toEqual([5, 10, 15, 30, 60]);
-    expect(page.volumeSteps).toHaveLength(10);
   });
 
   it('sets the theme', () => {
@@ -186,22 +159,17 @@ describe('LoggingPage', () => {
   let page: LoggingPage;
   let logging: LoggingService;
   let menu: { show: ReturnType<typeof vi.fn> };
-  let platform: Record<string, unknown>;
   let preferences: { setDebug: ReturnType<typeof vi.fn> };
-  let share: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.spyOn(console, 'info').mockImplementation(() => undefined);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     vi.spyOn(console, 'debug').mockImplementation(() => undefined);
     menu = { show: vi.fn() };
-    share = vi.fn().mockResolvedValue('ok');
-    platform = { canShare: vi.fn().mockReturnValue(true), share, version: signal('2.0.0') };
     preferences = { setDebug: vi.fn() };
     TestBed.configureTestingModule({
       providers: [
         { provide: MenuService, useValue: menu },
-        { provide: PlatformService, useValue: platform },
         { provide: PreferencesService, useValue: preferences },
       ],
     });
@@ -248,67 +216,27 @@ describe('LoggingPage', () => {
     logging.debugEnabled = true;
     page.showMenu(new Event('click'));
     const items = menuItems(menu);
-    expect(items.map((item) => item.text)).toEqual(['Debug messages', 'Share', 'Clear']);
+    expect(items.map((item) => item.text)).toEqual(['Debug messages', 'Clear']);
     expect(items[0].checked).toBe(true);
     items[0].toggle!(false);
     expect(preferences.setDebug).toHaveBeenCalledWith(false);
-    expect(items[1].hidden).toBe(false);
     vi.spyOn(logging, 'clear');
-    items[2].handler!();
+    items[1].handler!();
     expect(logging.clear).toHaveBeenCalled();
-  });
-
-  it('hides sharing when not supported', () => {
-    (platform['canShare'] as ReturnType<typeof vi.fn>).mockReturnValue(false);
-    page.showMenu(new Event('click'));
-    expect(menuItem(menu, 'Share').hidden).toBe(true);
-  });
-
-  it('shares the log', async () => {
-    logging.info('hello', { a: 1 });
-    logging.error('oops');
-    await flush();
-    await page.share();
-    expect(share).toHaveBeenCalledTimes(1);
-    const [subject, message] = share.mock.calls[0];
-    expect(subject).toBe('Mopidy Mobile 2.0.0');
-    const lines = message.split('\n');
-    expect(lines).toHaveLength(2);
-    expect(lines[0]).toMatch(/^info\t\d+\t"hello" {"a":1}$/);
-    expect(lines[1]).toMatch(/^error\t\d+\t"oops"$/);
-  });
-
-  it('logs sharing errors', async () => {
-    vi.spyOn(logging, 'error');
-    share.mockRejectedValue('nope');
-    await page.share();
-    expect(logging.error).toHaveBeenCalledWith('Error sharing log:', 'nope');
   });
 });
 
 describe('LicensesPage', () => {
-  async function render(isWebView: boolean): Promise<HTMLElement> {
+  it('lists the licenses of all third-party libraries', async () => {
     await TestBed.configureTestingModule({
       imports: [LicensesPage],
-      providers: [{ provide: PlatformService, useValue: { isWebView: () => isWebView, openExternal: vi.fn() } }],
+      providers: [{ provide: PlatformService, useValue: { openExternal: vi.fn() } }],
     }).compileComponents();
     const fixture = TestBed.createComponent(LicensesPage);
     fixture.detectChanges();
-    return fixture.nativeElement;
-  }
-
-  it('lists web licenses only in a browser', async () => {
-    const el = await render(false);
-    const names = textsOf(el, 'ion-item h2');
-    expect(names).toEqual(['Mopidy.js', 'Ionic', 'Ionicons', 'Angular', 'RxJS', 'messageformat']);
-  });
-
-  it('lists app licenses as well in a WebView', async () => {
-    const el = await render(true);
-    const names = textsOf(el, 'ion-item h2');
-    expect(names).toHaveLength(10);
-    expect(names).toContain('Apache Cordova');
-    expect(el.querySelectorAll('a[href]').length).toBe(20);
+    const el: HTMLElement = fixture.nativeElement;
+    expect(textsOf(el, 'ion-item h2')).toEqual(['Mopidy.js', 'Ionic', 'Ionicons', 'Angular', 'RxJS', 'messageformat']);
+    expect(el.querySelectorAll('a[href]').length).toBe(12);
   });
 });
 

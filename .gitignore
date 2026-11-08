@@ -6,8 +6,6 @@ coverage/
 dist/
 node_modules/
 out-tsc/
-platforms/
-plugins/
 www/
 mopidy_mobile/www/*
 !mopidy_mobile/www/index.html
@@ -18,5 +16,4 @@ mopidy_mobile/www/*
 *.swp
 .*.json
 .coverage
-build.json
 MANIFEST

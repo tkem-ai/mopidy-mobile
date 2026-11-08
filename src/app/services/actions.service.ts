@@ -21,7 +21,6 @@ export class ActionsService {
   private readonly connection = inject(ConnectionService);
 
   private defaultAction: Action = 'play';
-  private volumeStep = 10;
 
   add(obj: Model | Model[]): Promise<TlTrack[]> {
     return this.connection.call((mopidy) => mopidy.tracklist.add(addParams(obj)));
@@ -58,24 +57,6 @@ export class ActionsService {
     });
   }
 
-  increaseVolume(): Promise<unknown> {
-    return this.connection.call(async (mopidy) => {
-      const volume = await mopidy.mixer.getVolume();
-      if (volume < 100) {
-        return mopidy.mixer.setVolume({ volume: Math.min(volume + this.volumeStep, 100) });
-      }
-    });
-  }
-
-  decreaseVolume(): Promise<unknown> {
-    return this.connection.call(async (mopidy) => {
-      const volume = await mopidy.mixer.getVolume();
-      if (volume > 0) {
-        return mopidy.mixer.setVolume({ volume: Math.max(volume - this.volumeStep, 0) });
-      }
-    });
-  }
-
   /** Perform the user's default action. */
   default(obj: Model | Model[]): Promise<unknown> {
     return this[this.defaultAction](obj);
@@ -89,14 +70,6 @@ export class ActionsService {
     if (['play', 'next', 'add', 'replace'].includes(action)) {
       this.defaultAction = action as Action;
     }
-  }
-
-  getVolumeStep(): number {
-    return this.volumeStep;
-  }
-
-  setVolumeStep(value: number): void {
-    this.volumeStep = value;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

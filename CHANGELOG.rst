@@ -3,6 +3,10 @@ v2.0.0 UNRELEASED
 
 - Port to Ionic 8 and Angular 20.
 
+- Drop the Cordova-based Android app, including support for multiple
+  servers, Zeroconf discovery, media notifications and volume keys;
+  Mopidy Mobile is now available as a Web client extension only.
+
 - Build with the Angular CLI instead of Bower and custom scripts.
 
 - Update user interface to current Ionic components and styles,
@@ -12,8 +16,6 @@ v2.0.0 UNRELEASED
 
 - Fix playback view sometimes showing an outdated track after the
   tracklist changed.
-
-- Fix discovered Zeroconf servers not showing up until refreshed.
 
 - Fix Slovak translations of messages with placeholders.
 

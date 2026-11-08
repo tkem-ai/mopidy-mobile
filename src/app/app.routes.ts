@@ -1,28 +1,10 @@
-import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
-
-import { PlatformService } from './services/platform.service';
-
-/** The default view: the playback view when hosted by a Mopidy server, the server list otherwise. */
-function defaultRoute(): string {
-  return inject(PlatformService).isHosted() ? '/playback' : '/servers';
-}
-
-const serverRoutes: Routes = [
-  { path: '', loadComponent: () => import('./servers/servers.page').then((m) => m.ServersPage) },
-  { path: 'add', loadComponent: () => import('./servers/servers-add.page').then((m) => m.ServersAddPage) },
-  { path: 'edit', loadComponent: () => import('./servers/servers-edit.page').then((m) => m.ServersEditPage) },
-];
 
 export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: defaultRoute,
-  },
-  {
-    path: 'servers',
-    children: serverRoutes,
+    redirectTo: '/playback',
   },
   {
     path: '',
@@ -80,10 +62,9 @@ export const routes: Routes = [
           { path: 'logging', loadComponent: () => import('./settings/logging.page').then((m) => m.LoggingPage) },
           { path: 'licenses', loadComponent: () => import('./settings/licenses.page').then((m) => m.LicensesPage) },
           { path: 'about', loadComponent: () => import('./settings/about.page').then((m) => m.AboutPage) },
-          { path: 'servers', children: serverRoutes },
         ],
       },
     ],
   },
-  { path: '**', redirectTo: defaultRoute },
+  { path: '**', redirectTo: '/playback' },
 ];

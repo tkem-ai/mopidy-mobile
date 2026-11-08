@@ -4,7 +4,6 @@ import { Image, TlTrack, Track, TracklistOptions } from '../models';
 import { ConnectionService } from './connection.service';
 import { CoverartService } from './coverart.service';
 import { LoggingService } from './logging.service';
-import { PlatformService } from './platform.service';
 
 /** Tracks the playback position, updated in regular intervals. */
 class PositionTimer {
@@ -64,7 +63,6 @@ export class PlaybackService {
   private readonly connection = inject(ConnectionService);
   private readonly coverart = inject(CoverartService);
   private readonly logging = inject(LoggingService);
-  private readonly platform = inject(PlatformService);
 
   readonly track = signal<Track | null>(null);
   readonly image = signal<Image | null>(null);
@@ -95,13 +93,9 @@ export class PlaybackService {
       } else {
         this.timer.stop();
       }
-      this.platform.updatePlaybackState(data.new_state).catch((error) => this.logError(error));
     });
     on<{ time_position: number }>('event:seeked', (data) => this.timer.set(data.time_position));
-    on<{ title: string }>('event:streamTitleChanged', (data) => {
-      this.streamTitle.set(data.title);
-      this.updateControls();
-    });
+    on<{ title: string }>('event:streamTitleChanged', (data) => this.streamTitle.set(data.title));
     on('event:tracklistChanged', () =>
       this.setCurrentTlTrack(this.connection.call((mopidy) => mopidy.playback.getCurrentTlTrack())),
     );
@@ -115,13 +109,11 @@ export class PlaybackService {
     on('state:online', () => this.reload());
   }
 
-  /** Load the initial playback state; hides the splash screen when done. */
+  /** Load the initial playback state. */
   start(): void {
     if (!this.started) {
       this.started = true;
-      this.reload().finally(() =>
-        this.platform.splashscreen().then((splashscreen) => setTimeout(() => splashscreen.hide(), 250)),
-      );
+      this.reload();
     }
   }
 
@@ -248,36 +240,13 @@ export class PlaybackService {
     this.hasPrevious.set(previousTlid !== null);
     this.streamTitle.set(streamTitle);
     this.image.set(null);
-    this.updateControls();
     if (track) {
       this.coverart.getImage(track).then((image) => {
         if (this.track() === track) {
           this.image.set(image);
-          this.updateControls();
         }
       });
     }
-  }
-
-  private updateControls(): void {
-    this.platform
-      .updatePlaybackControls({
-        track: this.track(),
-        image: this.image(),
-        state: this.state(),
-        streamTitle: this.streamTitle(),
-        hasNext: this.hasNext(),
-        hasPrevious: this.hasPrevious(),
-        play: () => this.play(),
-        pause: () => this.pause(),
-        next: () => this.next(),
-        previous: () => this.previous(),
-      })
-      .catch((error) => this.logError(error));
-  }
-
-  private logError(error: unknown): void {
-    this.logging.error('Error updating playback controls:', error);
   }
 }
 

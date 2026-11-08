@@ -7,14 +7,11 @@ import { image, tlTrack } from '../../testing/mopidy';
 import { CoverartService } from './coverart.service';
 import { LoggingService } from './logging.service';
 import { MixerService, PlaybackService } from './playback.service';
-import { PlatformService } from './platform.service';
 
 describe('PlaybackService', () => {
   let service: PlaybackService;
   let connection: MockConnectionService;
   let coverart: { getImage: ReturnType<typeof vi.fn> };
-  let platform: Record<string, ReturnType<typeof vi.fn>>;
-  let splashscreen: { show: ReturnType<typeof vi.fn>; hide: ReturnType<typeof vi.fn> };
   let logging: LoggingService;
 
   beforeEach(() => {
@@ -22,17 +19,10 @@ describe('PlaybackService', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     connection = new MockConnectionService();
     coverart = { getImage: vi.fn().mockResolvedValue(null) };
-    splashscreen = { show: vi.fn(), hide: vi.fn() };
-    platform = {
-      updatePlaybackControls: vi.fn().mockResolvedValue(undefined),
-      updatePlaybackState: vi.fn().mockResolvedValue(undefined),
-      splashscreen: vi.fn().mockResolvedValue(splashscreen),
-    };
     TestBed.configureTestingModule({
       providers: [
         provideMockConnection(connection),
         { provide: CoverartService, useValue: coverart },
-        { provide: PlatformService, useValue: platform },
       ],
     });
     logging = TestBed.inject(LoggingService);
@@ -94,9 +84,6 @@ describe('PlaybackService', () => {
       await flush();
       expect(coverart.getImage).toHaveBeenCalledWith(current.track);
       expect(service.image()).toEqual(image('cover', 500));
-      expect(platform.updatePlaybackControls).toHaveBeenLastCalledWith(
-        expect.objectContaining({ track: current.track, image: image('cover', 500) }),
-      );
     });
 
     it('advances the position while playing', async () => {
@@ -134,15 +121,11 @@ describe('PlaybackService', () => {
   });
 
   describe('start', () => {
-    it('loads the state once and hides the splash screen', async () => {
-      vi.useFakeTimers();
+    it('loads the state once', async () => {
       service.start();
       service.start();
-      await vi.advanceTimersByTimeAsync(0);
+      await flush();
       expect(connection.mopidy.playback.getState).toHaveBeenCalledTimes(1);
-      expect(splashscreen.hide).not.toHaveBeenCalled();
-      await vi.advanceTimersByTimeAsync(250);
-      expect(splashscreen.hide).toHaveBeenCalledTimes(1);
     });
 
     it('reloads when the connection comes online', async () => {
@@ -153,11 +136,9 @@ describe('PlaybackService', () => {
   });
 
   describe('events', () => {
-    it('updates the playback state', async () => {
+    it('updates the playback state', () => {
       connection.emit('event:playbackStateChanged', { old_state: 'stopped', new_state: 'playing' });
       expect(service.state()).toBe('playing');
-      await flush();
-      expect(platform.updatePlaybackState).toHaveBeenCalledWith('playing');
     });
 
     it('tracks the position across play, pause, seek and resume', async () => {
@@ -193,16 +174,11 @@ describe('PlaybackService', () => {
       expect(service.track()).toEqual(current.track);
       expect(service.hasNext()).toBe(true);
       expect(service.hasPrevious()).toBe(false);
-      expect(platform.updatePlaybackControls).toHaveBeenCalledWith(
-        expect.objectContaining({ track: current.track, hasNext: true, hasPrevious: false }),
-      );
     });
 
-    it('updates the stream title', async () => {
+    it('updates the stream title', () => {
       connection.emit('event:streamTitleChanged', { title: 'Now playing' });
       expect(service.streamTitle()).toBe('Now playing');
-      await flush();
-      expect(platform.updatePlaybackControls).toHaveBeenCalledWith(expect.objectContaining({ streamTitle: 'Now playing' }));
     });
 
     it('refreshes the current track when the tracklist changes', async () => {
@@ -245,13 +221,6 @@ describe('PlaybackService', () => {
       connection.emit('event:optionsChanged');
       await flush();
       expect(service.options()).toEqual({ repeat: true, single: true });
-    });
-
-    it('logs errors from the platform', async () => {
-      platform.updatePlaybackState.mockRejectedValue('plugin error');
-      connection.emit('event:playbackStateChanged', { old_state: 'stopped', new_state: 'playing' });
-      await flush();
-      expect(logging.error).toHaveBeenCalledWith('Error updating playback controls:', 'plugin error');
     });
   });
 

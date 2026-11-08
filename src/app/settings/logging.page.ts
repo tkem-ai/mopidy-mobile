@@ -17,7 +17,6 @@ import {
 import { LOG_ICONS } from '../icons';
 import { LogRecord, LoggingService } from '../services/logging.service';
 import { MenuService } from '../services/menu.service';
-import { PlatformService } from '../services/platform.service';
 import { PreferencesService } from '../services/preferences.service';
 import { TranslatePipe } from '../services/translate.service';
 
@@ -96,7 +95,6 @@ export class LoggingPage {
   readonly stringify = stringify;
 
   private readonly menu = inject(MenuService);
-  private readonly platform = inject(PlatformService);
   private readonly preferences = inject(PreferencesService);
 
   icon(level: string): string {
@@ -124,22 +122,7 @@ export class LoggingPage {
         checked: this.logging.debugEnabled,
         toggle: (checked) => this.preferences.setDebug(checked),
       },
-      { text: 'Share', hellip: true, hidden: !this.platform.canShare(), handler: () => this.share() },
       { text: 'Clear', handler: () => this.logging.clear() },
     ]);
-  }
-
-  async share(): Promise<void> {
-    const subject = 'Mopidy Mobile ' + this.platform.version();
-    const message = this.logging
-      .records()
-      .map((record) => [record.level, record.time, record.args.map(stringify).join(' ')].join('\t'))
-      .join('\n');
-    try {
-      const result = await this.platform.share(subject, message);
-      this.logging.debug('Sharing log returned', result);
-    } catch (error) {
-      this.logging.error('Error sharing log:', error);
-    }
   }
 }

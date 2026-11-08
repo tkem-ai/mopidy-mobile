@@ -101,42 +101,6 @@ describe('ActionsService', () => {
     });
   });
 
-  describe('volume', () => {
-    it('increases the volume by the volume step', async () => {
-      connection.mopidy.mixer.getVolume.mockResolvedValue(50);
-      await service.increaseVolume();
-      expect(connection.mopidy.mixer.setVolume).toHaveBeenCalledWith({ volume: 60 });
-    });
-
-    it('does not exceed the maximum volume', async () => {
-      connection.mopidy.mixer.getVolume.mockResolvedValue(95);
-      await service.increaseVolume();
-      expect(connection.mopidy.mixer.setVolume).toHaveBeenCalledWith({ volume: 100 });
-      connection.mopidy.mixer.setVolume.mockClear();
-      connection.mopidy.mixer.getVolume.mockResolvedValue(100);
-      await service.increaseVolume();
-      expect(connection.mopidy.mixer.setVolume).not.toHaveBeenCalled();
-    });
-
-    it('decreases the volume by the volume step', async () => {
-      service.setVolumeStep(5);
-      expect(service.getVolumeStep()).toBe(5);
-      connection.mopidy.mixer.getVolume.mockResolvedValue(50);
-      await service.decreaseVolume();
-      expect(connection.mopidy.mixer.setVolume).toHaveBeenCalledWith({ volume: 45 });
-    });
-
-    it('does not go below zero', async () => {
-      connection.mopidy.mixer.getVolume.mockResolvedValue(3);
-      await service.decreaseVolume();
-      expect(connection.mopidy.mixer.setVolume).toHaveBeenCalledWith({ volume: 0 });
-      connection.mopidy.mixer.setVolume.mockClear();
-      connection.mopidy.mixer.getVolume.mockResolvedValue(0);
-      await service.decreaseVolume();
-      expect(connection.mopidy.mixer.setVolume).not.toHaveBeenCalled();
-    });
-  });
-
   describe('default action', () => {
     it('plays by default', async () => {
       expect(service.getDefault()).toBe('play');
