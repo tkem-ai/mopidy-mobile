@@ -28,6 +28,7 @@
         "@angular/forms": "^20.3.0",
         "@angular/platform-browser": "^20.3.0",
         "@angular/router": "^20.3.0",
+        "@angular/service-worker": "^20.3.35",
         "@ionic/angular": "^8.8.0",
         "@messageformat/core": "^3.4.0",
         "events": "^3.3.0",

@@ -52,6 +52,13 @@ extension:
   default path ``/mopidy/ws/``, for example when using a reverse
   proxy.
 
+The Web client uses a service worker to cache its application files,
+so it loads faster on subsequent visits.  Browsers only enable service
+workers for secure origins, i.e. when Mopidy is accessed via HTTPS
+(for example using a reverse proxy) or on ``localhost``.  New versions
+are downloaded in the background, and used the next time the Web
+client is started.
+
 
 Building from Source
 ------------------------------------------------------------------------

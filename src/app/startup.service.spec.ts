@@ -8,6 +8,7 @@ import { LoggingService } from './services/logging.service';
 import { PlatformService } from './services/platform.service';
 import { PreferencesService } from './services/preferences.service';
 import { SettingsService } from './services/settings.service';
+import { UpdatesService } from './services/updates.service';
 import { StartupService } from './startup.service';
 
 describe('StartupService', () => {
@@ -31,6 +32,7 @@ describe('StartupService', () => {
         { provide: PlatformService, useValue: platform },
         { provide: PreferencesService, useValue: { applyAll: vi.fn(() => order.push('applyAll')) } },
         { provide: SettingsService, useValue: { migrate: vi.fn(() => order.push('migrate')) } },
+        { provide: UpdatesService, useValue: { init: vi.fn(() => order.push('updates')) } },
       ],
     });
     logging = TestBed.inject(LoggingService);
@@ -49,7 +51,7 @@ describe('StartupService', () => {
 
   it('migrates settings before applying preferences', () => {
     init();
-    expect(order).toEqual(['migrate', 'applyAll']);
+    expect(order).toEqual(['migrate', 'applyAll', 'updates']);
   });
 
   it('logs and publishes the application version', async () => {

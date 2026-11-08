@@ -32,6 +32,6 @@ class Extension(ext.Extension):
         return [
             (r'/', RedirectHandler, {'url': 'index.html'}),
             (r'/(.*\.html)', IndexHandler, {'config': config, 'path': path}),
-            (r'/(.*\.json)', IndexHandler, {'config': config, 'path': path}),
+            (r'/(manifest\.json)', IndexHandler, {'config': config, 'path': path}),
             (r'/(.*)', StaticHandler, {'path': path})
         ]

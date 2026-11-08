@@ -5,6 +5,7 @@ import { LoggingService } from './services/logging.service';
 import { PlatformService } from './services/platform.service';
 import { PreferencesService } from './services/preferences.service';
 import { SettingsService } from './services/settings.service';
+import { UpdatesService } from './services/updates.service';
 
 /** Application initialization. */
 @Injectable({ providedIn: 'root' })
@@ -14,6 +15,7 @@ export class StartupService {
   private readonly platform = inject(PlatformService);
   private readonly preferences = inject(PreferencesService);
   private readonly settings = inject(SettingsService);
+  private readonly updates = inject(UpdatesService);
 
   init(): void {
     this.settings.migrate();
@@ -21,6 +23,8 @@ export class StartupService {
 
     // connect to the hosting server, or the configured WebSocket URL
     this.connection.reset(this.platform.webSocketUrl());
+
+    this.updates.init();
 
     this.platform.appVersion().then((version) => {
       this.logging.info('Starting Mopidy Mobile ' + version);

@@ -9,6 +9,9 @@ v2.0.0 UNRELEASED
 
 - Build with the Angular CLI instead of Bower and custom scripts.
 
+- Cache application files using a service worker when accessed via
+  HTTPS.
+
 - Update user interface to current Ionic components and styles,
   including a dark theme based on Ionic's dark palette.
 

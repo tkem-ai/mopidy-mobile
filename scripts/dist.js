@@ -3,6 +3,11 @@
 // Copy the application files built by "ng build" to mopidy_mobile/www,
 // for serving by the Mopidy Web extension.  The extension's index.html
 // is a Tornado template maintained separately, so it is not copied.
+//
+// The service worker manifest (ngsw.json) lists root-relative URLs such
+// as "/main.js", which the service worker resolves relative to its
+// scope.  Since the Web extension is served below a path like /mobile/,
+// these are converted to relative URLs.
 
 'use strict';
 
@@ -16,7 +21,22 @@ const DEST = path.join('mopidy_mobile', 'www');
 const EXCLUDE = new Set(['index.html', 'prerendered-routes.json']);
 
 // files expected by mopidy_mobile/www/index.html
-const REQUIRED = ['main.js', 'polyfills.js', 'styles.css'];
+const REQUIRED = ['main.js', 'polyfills.js', 'styles.css', 'ngsw.json', 'ngsw-worker.js'];
+
+/** Convert a root-relative URL to a relative URL. */
+function relative(url) {
+  return url.startsWith('/') ? url.slice(1) : url;
+}
+
+/** Make the URLs in a service worker manifest relative. */
+function relativeManifest(manifest) {
+  return {
+    ...manifest,
+    index: relative(manifest.index),
+    assetGroups: manifest.assetGroups.map((group) => ({ ...group, urls: group.urls.map(relative) })),
+    hashTable: Object.fromEntries(Object.entries(manifest.hashTable).map(([url, hash]) => [relative(url), hash])),
+  };
+}
 
 for (const name of REQUIRED) {
   if (!fs.existsSync(path.join(SRC, name))) {
@@ -28,7 +48,7 @@ for (const name of REQUIRED) {
 // remove files from previous builds
 for (const entry of fs.readdirSync(DEST, { withFileTypes: true })) {
   const name = entry.name;
-  if (/\.(js|css|txt)$/.test(name) || ['assets', 'media', 'app', 'css', 'lib'].includes(name)) {
+  if (/\.(js|css|txt)$/.test(name) || name === 'ngsw.json' || ['assets', 'media', 'app', 'css', 'lib'].includes(name)) {
     fs.rmSync(path.join(DEST, name), { recursive: true, force: true });
   }
 }
@@ -40,4 +60,9 @@ for (const entry of fs.readdirSync(SRC, { withFileTypes: true })) {
     count += 1;
   }
 }
+
+const manifestPath = path.join(DEST, 'ngsw.json');
+const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+fs.writeFileSync(manifestPath, JSON.stringify(relativeManifest(manifest), null, 2));
+
 console.log(`Copied ${count} files and directories from ${SRC} to ${DEST}`);
